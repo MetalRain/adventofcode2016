@@ -17,15 +17,11 @@ data Range = Range Int Int deriving Show
 instance Eq Range where
   (Range s1 e1) == (Range s2 e2) = (s1 == s2 && e1 == e2)
 
+-- Ord only considers start of Range
+-- may not be useful outside of this toy example
 instance Ord Range where
   (Range s1 _) < (Range s2 _) = s1 < s2
   (Range s1 _) <= (Range s2 _) = s1 <= s2
-
-splitLines :: String -> [String]
-splitLines = splitOn "\n"
-
-splitEnds :: String -> [String]
-splitEnds = splitOn "-"
 
 nextAfter :: Range -> Int
 nextAfter (Range s e) = e + 1
@@ -45,9 +41,9 @@ parseRange :: String -> Maybe Range
 parseRange str 
   | all isJust [start, end] = Just (buildRange (fromJust start) (fromJust end))
   | otherwise = Nothing where
-     parts = splitEnds str :: [String]
+     parts = splitOn "-" str
      start = readMaybe (minimum parts) :: Maybe Int
-     end   = readMaybe (maximum parts) :: Maybe Int 
+     end   = readMaybe (maximum parts) :: Maybe Int
 
 squash :: Range -> Range -> Range
 squash extender orig
