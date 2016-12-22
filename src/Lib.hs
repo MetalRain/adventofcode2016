@@ -1,7 +1,9 @@
 module Lib
     ( readRanges
     , Range(..)
-    , extendSelf
+    , clusterRanges
+    , rangeLen
+    , nextAfter
     ) where
 
 import Data.List
@@ -9,6 +11,7 @@ import Data.List.Split
 import Data.Maybe
 import Text.Read
 
+-- Inclusive range between two integers
 data Range = Range Int Int deriving Show 
 
 instance Eq Range where
@@ -24,19 +27,25 @@ splitLines = splitOn "\n"
 splitEnds :: String -> [String]
 splitEnds = splitOn "-"
 
-readRanges :: FilePath -> IO [Maybe Range]
+nextAfter :: Range -> Int
+nextAfter (Range s e) = e + 1
+
+rangeLen :: Range -> Int
+rangeLen (Range s e) = e - s + 1
+
+readRanges :: FilePath -> IO [Range]
 readRanges p = do
-  ruleString <- readFile p
-  return $ map parseRange $ splitLines ruleString
+  str <- readFile p
+  return $ map fromJust $ filter isJust $ map parseRange $ lines str
 
 buildRange :: Int -> Int -> Range
 buildRange s e = Range (minimum [s, e]) (maximum [s, e])
 
 parseRange :: String -> Maybe Range
-parseRange s 
+parseRange str 
   | all isJust [start, end] = Just (buildRange (fromJust start) (fromJust end))
   | otherwise = Nothing where
-     parts = splitEnds s :: [String]
+     parts = splitEnds str :: [String]
      start = readMaybe (minimum parts) :: Maybe Int
      end   = readMaybe (maximum parts) :: Maybe Int 
 
@@ -53,8 +62,9 @@ squash extender orig
 squashWith :: Range -> [Range] -> [Range]
 squashWith = map . squash
 
-extendSelf :: [Range] -> [Range]
-extendSelf xs
-  | xs == extended  = extended 
-  | otherwise       = extendSelf extended where
-     extended = nub $ sort $ foldr squashWith xs xs
+-- Merges intersecting and adjecent ranges, sorts result
+clusterRanges :: [Range] -> [Range]
+clusterRanges xs
+  | xs == extended  = sort extended 
+  | otherwise       = clusterRanges extended where
+     extended = nub $ foldr squashWith xs xs
