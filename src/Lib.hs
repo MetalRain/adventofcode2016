@@ -32,7 +32,7 @@ rangeLen (Range s e) = e - s + 1
 readRanges :: FilePath -> IO [Range]
 readRanges p = do
   str <- readFile p
-  return $ map fromJust $ filter isJust $ map parseRange $ lines str
+  return $ catMaybes $ map parseRange $ lines str
 
 buildRange :: Int -> Int -> Range
 buildRange s e = Range (minimum [s, e]) (maximum [s, e])
